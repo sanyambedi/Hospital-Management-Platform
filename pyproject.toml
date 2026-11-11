@@ -1,0 +1,24 @@
+[project]
+name = "hospital-appointment-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+# E=pycodestyle errors, F=pyflakes, W=warnings, I=isort, N=naming,
+# UP=pyupgrade, B=bugbear, A=builtins, SIM=simplify
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM"]
+# WHY ignore B008: FastAPI's Depends() pattern requires function calls in defaults
+# WHY ignore B904: HTTPException re-raises in except blocks are intentional
+# WHY ignore SIM102: nested if in elif blocks is more readable for auth checks
+ignore = ["B008", "B904", "SIM102"]
+
+[tool.ruff.lint.per-file-ignores]
+# WHY: Alembic migration templates use Union and typing imports by convention
+"migrations/*" = ["UP007", "UP035"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
