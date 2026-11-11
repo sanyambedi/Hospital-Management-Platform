@@ -1,0 +1,38 @@
+# Secrets & env files
+.env
+.env.*
+!.env.example
+secrets/
+backups/
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+report.xml
+coverage.xml
+
+# Notes (personal study material, not committed)
+notes/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Type checking
+.mypy_cache/
