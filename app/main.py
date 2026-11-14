@@ -7,10 +7,12 @@ production (the test suite can import create_app() with overrides).
 
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
+from fastapi.responses import FileResponse, RedirectResponse
 
 from app.config import settings
 from app.logging_config import RequestIdMiddleware, setup_logging
@@ -76,6 +78,16 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(doctors.router)
     app.include_router(appointments.router)
+
+    portal_html = os.path.join(os.path.dirname(__file__), "static", "index.html")
+
+    @app.get("/", include_in_schema=False)
+    @app.get("/portal", include_in_schema=False)
+    def root():
+        """Serve the hospital appointment web portal."""
+        if os.path.exists(portal_html):
+            return FileResponse(portal_html)
+        return RedirectResponse(url="/docs")
 
     return app
 
