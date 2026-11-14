@@ -13,11 +13,12 @@ COMPOSE := docker compose -f deploy/docker-compose.yml
 # ---------------------------------------------------------------------------
 
 ## Generate random secrets for local dev (idempotent – won't overwrite existing)
+## WHY python fallback: openssl may not be available on all platforms (e.g. Windows)
 init-secrets:
 	@mkdir -p secrets
-	@test -f secrets/db_password.txt    || openssl rand -base64 32 > secrets/db_password.txt
-	@test -f secrets/jwt_secret.txt     || openssl rand -base64 32 > secrets/jwt_secret.txt
-	@test -f secrets/seed_password.txt  || openssl rand -base64 32 > secrets/seed_password.txt
+	@test -f secrets/db_password.txt    || python -c "import secrets; print(secrets.token_urlsafe(32), end='')" > secrets/db_password.txt
+	@test -f secrets/jwt_secret.txt     || python -c "import secrets; print(secrets.token_urlsafe(32), end='')" > secrets/jwt_secret.txt
+	@test -f secrets/seed_password.txt  || python -c "import secrets; print(secrets.token_urlsafe(32), end='')" > secrets/seed_password.txt
 	@echo "✓ Secrets initialized in secrets/"
 
 # ---------------------------------------------------------------------------

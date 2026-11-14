@@ -75,12 +75,25 @@ class Settings(BaseSettings):
         self.jwt_secret = _read_secret_file("JWT_SECRET_FILE") or self.jwt_secret
         self.seed_password = _read_secret_file("SEED_PASSWORD_FILE") or self.seed_password
 
-        # --- Build DATABASE_URL from components if not set directly ---
+        # --- Build or patch DATABASE_URL ---
         if not self.database_url:
+            # No DATABASE_URL at all: build from component vars
             self.database_url = (
                 f"postgresql+psycopg://{self.db_user}:{self.db_password}"
                 f"@{self.db_host}:{self.db_port}/{self.db_name}"
             )
+        elif self.db_password and "://" in self.database_url:
+            # WHY: in Docker Compose, DATABASE_URL may be set without a password
+            # (e.g. postgresql+psycopg://hospital@db:5432/hospital) and the
+            # password comes from DB_PASSWORD_FILE.  Inject it.
+            from urllib.parse import urlparse, urlunparse
+
+            parsed = urlparse(self.database_url)
+            if not parsed.password:
+                netloc = f"{parsed.username}:{self.db_password}@{parsed.hostname}"
+                if parsed.port:
+                    netloc += f":{parsed.port}"
+                self.database_url = urlunparse(parsed._replace(netloc=netloc))
 
 
 # Singleton — imported throughout the app
