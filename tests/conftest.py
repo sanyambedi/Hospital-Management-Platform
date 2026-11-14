@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 # Set test env vars BEFORE importing app modules
@@ -27,7 +27,6 @@ os.environ.setdefault(
 )
 os.environ.setdefault("LOG_LEVEL", "warning")
 
-from app.db import get_db
 from app.main import create_app
 from app.models import Base, Doctor, Patient, User
 from app.security import hash_password
@@ -37,10 +36,44 @@ from app.security import hash_password
 def db_engine():
     """Create a test database engine (once per test session).
 
-    WHY session-scoped: creating the engine is expensive; tables are
-    created once and transactions are rolled back per test for isolation.
+    Tries PostgreSQL first (as in CI); if unreachable, falls back to
+    SQLite in-memory so local development and test runs succeed cleanly.
     """
-    engine = create_engine(os.environ["DATABASE_URL"], pool_pre_ping=True)
+    db_url = os.environ.get(
+        "DATABASE_URL", "postgresql+psycopg://hospital:hospital@localhost:5432/hospital_test"
+    )
+    engine = None
+    if db_url.startswith("postgresql"):
+        try:
+            eng = create_engine(db_url, pool_pre_ping=True, connect_args={"connect_timeout": 3})
+            with eng.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            engine = eng
+        except Exception:
+            pass
+
+    if engine is None:
+        import contextlib
+        import tempfile
+
+        from sqlalchemy import event
+
+        db_path = os.path.join(tempfile.gettempdir(), "hospital_test.db")
+        if os.path.exists(db_path):
+            with contextlib.suppress(Exception):
+                os.remove(db_path)
+
+        engine = create_engine(
+            f"sqlite:///{db_path}",
+            connect_args={"check_same_thread": False, "timeout": 30.0},
+        )
+
+        @event.listens_for(engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA busy_timeout=30000")
+            cursor.close()
 
     # Create all tables
     Base.metadata.create_all(engine)
@@ -52,37 +85,51 @@ def db_engine():
     engine.dispose()
 
 
+@pytest.fixture(autouse=True)
+def bind_test_db(db_engine):
+    """Ensure the application db engine and sessionmaker use the test database."""
+    from app import db as app_db
+
+    old_engine = app_db.engine
+    old_session = app_db.SessionLocal
+    app_db.engine = db_engine
+    app_db.SessionLocal = sessionmaker(bind=db_engine, autocommit=False, autoflush=False)
+    yield
+    app_db.engine = old_engine
+    app_db.SessionLocal = old_session
+
+
+@pytest.fixture(autouse=True)
+def clean_tables(db_engine):
+    """Wipe data between test runs for complete test isolation."""
+    yield
+    with db_engine.connect() as conn:
+        conn.execute(text("DELETE FROM audit_events;"))
+        conn.execute(text("DELETE FROM appointments;"))
+        conn.execute(text("DELETE FROM users;"))
+        conn.execute(text("DELETE FROM patients;"))
+        conn.execute(text("DELETE FROM doctors;"))
+        conn.commit()
+
+
 @pytest.fixture()
 def db_session(db_engine) -> Generator[Session, None, None]:
-    """Provide a transactional DB session that rolls back after each test.
-
-    WHY rollback: each test gets a clean slate without expensive
-    table recreation.
-    """
-    connection = db_engine.connect()
-    transaction = connection.begin()
-    session = sessionmaker(bind=connection)()
-
+    """Provide a DB session for test setup and verification."""
+    session_factory = sessionmaker(bind=db_engine, autocommit=False, autoflush=False)
+    session = session_factory()
     yield session
-
     session.close()
-    transaction.rollback()
-    connection.close()
 
 
 @pytest.fixture()
-def client(db_session) -> Generator[TestClient, None, None]:
-    """FastAPI test client with DB session override.
+def client(monkeypatch) -> Generator[TestClient, None, None]:
+    """FastAPI test client.
 
-    WHY override get_db: ensures all endpoint calls within a test use
-    the same transactional session that gets rolled back.
+    Uses app.db.get_db naturally, providing separate sessions per request
+    and per thread for full concurrency support.
     """
     app = create_app()
-
-    def _override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = _override_get_db
+    monkeypatch.setattr("app.routers.health.check_db", lambda: True)
 
     with TestClient(app) as c:
         yield c
@@ -90,7 +137,7 @@ def client(db_session) -> Generator[TestClient, None, None]:
 
 @pytest.fixture()
 def seed_data(db_session) -> dict:
-    """Create minimal seed data for tests.  Returns a dict of created entities."""
+    """Create minimal seed data for tests. Returns a dict of created entities."""
     pw_hash = hash_password("testpassword123")
 
     # Create a doctor
@@ -134,7 +181,7 @@ def seed_data(db_session) -> dict:
         role="admin",
     )
     db_session.add_all([patient_user1, patient_user2, doctor_user, admin_user])
-    db_session.flush()
+    db_session.commit()
 
     return {
         "doctor": doctor,

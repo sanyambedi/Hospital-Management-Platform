@@ -15,8 +15,8 @@ from __future__ import annotations
 import structlog
 from sqlalchemy.orm import Session
 
+from app import db as app_db
 from app.config import settings
-from app.db import SessionLocal
 from app.models import Doctor, Patient, User
 from app.security import hash_password
 
@@ -38,9 +38,12 @@ PATIENTS = [
 ]
 
 
-def run_seed() -> None:
+def run_seed(db: Session | None = None) -> None:
     """Insert seed data if it doesn't already exist."""
-    db: Session = SessionLocal()
+    close_on_exit = False
+    if db is None:
+        db = app_db.SessionLocal()
+        close_on_exit = True
     try:
         _seed_data(db)
         db.commit()
@@ -50,7 +53,8 @@ def run_seed() -> None:
         logger.exception("seed_failed")
         raise
     finally:
-        db.close()
+        if close_on_exit:
+            db.close()
 
 
 def _seed_data(db: Session) -> None:

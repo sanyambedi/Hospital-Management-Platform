@@ -20,6 +20,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     text,
@@ -100,6 +101,7 @@ class Appointment(Base):
             "slot_start",
             unique=True,
             postgresql_where=text("status = 'confirmed'"),
+            sqlite_where=text("status = 'confirmed'"),
         ),
     )
 
@@ -141,7 +143,9 @@ class AuditEvent(Base):
 
     __tablename__ = "audit_events"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
     ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     actor_role: Mapped[str | None] = mapped_column(String(20), nullable=True)

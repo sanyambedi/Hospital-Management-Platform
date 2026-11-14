@@ -24,6 +24,12 @@ coverage.xml
 # Notes (personal study material, not committed)
 notes/
 
+# Logs and temporary local run output
+*.log
+*.out
+*.err
+hospital_test.db*
+
 # IDE
 .vscode/
 .idea/

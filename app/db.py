@@ -17,11 +17,14 @@ from app.config import settings
 
 # WHY pool_pre_ping: detects stale connections after DB restarts,
 # avoiding cryptic "connection closed" errors on the first request.
+# WHY connect_timeout: fail fast (3s) so /readyz returns 503 promptly
+# when the database is unreachable instead of hanging.
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=10,
+    connect_args={"connect_timeout": 3},
 )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
