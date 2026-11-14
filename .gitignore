@@ -29,6 +29,7 @@ notes/
 *.out
 *.err
 hospital_test.db*
+hospital.db*
 
 # IDE
 .vscode/

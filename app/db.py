@@ -19,12 +19,21 @@ from app.config import settings
 # avoiding cryptic "connection closed" errors on the first request.
 # WHY connect_timeout: fail fast (3s) so /readyz returns 503 promptly
 # when the database is unreachable instead of hanging.
+_connect_args: dict = {}
+_engine_kwargs: dict = {"pool_pre_ping": True}
+
+if settings.database_url.startswith("postgresql"):
+    _connect_args["connect_timeout"] = 3
+    _engine_kwargs["pool_size"] = 5
+    _engine_kwargs["max_overflow"] = 10
+elif settings.database_url.startswith("sqlite"):
+    _connect_args["check_same_thread"] = False
+    _connect_args["timeout"] = 30.0
+
 engine = create_engine(
     settings.database_url,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-    connect_args={"connect_timeout": 3},
+    connect_args=_connect_args,
+    **_engine_kwargs,
 )
 
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

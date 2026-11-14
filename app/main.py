@@ -31,6 +31,13 @@ async def lifespan(app: FastAPI):
         timezone=settings.timezone,
     )
 
+    # For local standalone / demo mode on SQLite: ensure tables exist
+    if settings.database_url.startswith("sqlite"):
+        from app.db import engine
+        from app.models import Base
+
+        Base.metadata.create_all(engine)
+
     # Optional auto-seed in dev/demo mode
     if settings.run_seed:
         logger.info("auto_seed_enabled", run_seed=True)
