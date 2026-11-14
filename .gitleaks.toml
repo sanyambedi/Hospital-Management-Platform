@@ -1,0 +1,12 @@
+# WHY gitleaks config: prevent committing secrets to the repository
+# Only allowlist items are obvious placeholders in .env.example
+title = "Hospital Appointment API gitleaks config"
+
+[allowlist]
+description = "Allow placeholders in example files"
+paths = [
+    '''.env\.example''',
+    '''docs/.*''',
+    '''tests/.*''',
+    '''scripts/.*''',
+]

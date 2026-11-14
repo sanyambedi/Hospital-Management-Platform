@@ -1,0 +1,27 @@
+# WHY .dockerignore: keeps the build context small and prevents
+# secrets, tests, and unnecessary files from ending up in the image.
+.git
+.gitignore
+.env
+.env.*
+secrets/
+backups/
+tests/
+docs/
+notes/
+scripts/
+__pycache__
+*.pyc
+.venv
+.pytest_cache
+.coverage
+htmlcov/
+.ruff_cache
+*.md
+Makefile
+pyproject.toml
+requirements-dev.txt
+.github/
+deploy/
+.dockerignore
+.gitleaks.toml

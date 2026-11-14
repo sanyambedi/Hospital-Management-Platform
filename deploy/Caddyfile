@@ -1,0 +1,39 @@
+# =============================================================================
+# Hospital Appointment API – Reverse Proxy Configuration
+#
+# WHY Caddy: automatic TLS (even with internal CA), simple config,
+# security headers out of the box.  For this project scope, it's the
+# simplest correct choice for HTTPS.
+#
+# WHY tls internal: generates a self-signed cert from Caddy's built-in
+# CA.  No public domain needed.  Use `curl -k` or trust the CA cert.
+# =============================================================================
+
+# Site address: localhost for local dev
+localhost {
+    # WHY tls internal: automatic HTTPS with Caddy's internal CA
+    tls internal
+
+    # Reverse proxy to the FastAPI app (internal Docker network)
+    reverse_proxy app:8000
+
+    # Security headers — defense in depth
+    header {
+        # WHY HSTS: tells browsers to only use HTTPS
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        # WHY X-Content-Type-Options: prevents MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # WHY X-Frame-Options: prevents clickjacking
+        X-Frame-Options "DENY"
+        # WHY Referrer-Policy: limits information leakage
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Remove server header to hide Caddy version
+        -Server
+    }
+
+    # Access logging in JSON format (matches our structured logging approach)
+    log {
+        output stdout
+        format json
+    }
+}

@@ -1,0 +1,16 @@
+# WHY dependabot: automated security and version updates for deps
+# Checks weekly for updates to pip packages, Docker images, and GitHub Actions
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

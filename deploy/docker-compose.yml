@@ -1,0 +1,194 @@
+# =============================================================================
+# Hospital Appointment API – Docker Compose Stack
+#
+# Services: db (Postgres) → migrate (Alembic) → app (FastAPI) → proxy (Caddy)
+# Networks: backend (internal, db+app+migrate), frontend (proxy+app)
+# Secrets: mounted as files, read via *_FILE convention in app config
+#
+# WHY Compose (not K8s): appropriate for this project scope; simpler to
+# operate, debug, and explain.  See ADR-006.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 – the only stateful service
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hospital
+      POSTGRES_USER: hospital
+      # WHY _FILE: reads password from Docker secret file, not env var
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      # WHY named volume: data persists across container restarts/rebuilds
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospital -d hospital"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - backend
+    # WHY no published ports: DB is only reachable from the backend network
+    # Security: no direct access from the host or internet
+    # Hardening
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/postgresql
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  # ---------------------------------------------------------------------------
+  # One-shot migration service
+  # WHY separate service: keeps app startup simple; runs once and exits
+  # ---------------------------------------------------------------------------
+  migrate:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: ${APP_IMAGE:-hospital-appointment-api:local}
+    command: >
+      sh -c "alembic upgrade head"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://hospital@db:5432/hospital
+      DB_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    restart: "no"
+    networks:
+      - backend
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+  # ---------------------------------------------------------------------------
+  # FastAPI application
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: ${APP_IMAGE:-hospital-appointment-api:local}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgresql+psycopg://hospital@db:5432/hospital
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      SEED_PASSWORD_FILE: /run/secrets/seed_password
+      RUN_SEED: ${RUN_SEED:-false}
+      SLOT_MINUTES: ${SLOT_MINUTES:-30}
+      WORK_START: ${WORK_START:-09:00}
+      WORK_END: ${WORK_END:-17:00}
+      TIMEZONE: ${TIMEZONE:-Asia/Kolkata}
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+    secrets:
+      - db_password
+      - jwt_secret
+      - seed_password
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2); sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - backend
+      - frontend
+    # WHY no published ports: app is only reachable via the proxy
+    # Hardening: read-only root FS, drop all capabilities, no privilege escalation
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  # ---------------------------------------------------------------------------
+  # Caddy reverse proxy – the only public-facing service
+  # WHY Caddy: automatic TLS with internal CA, simple config
+  # ---------------------------------------------------------------------------
+  proxy:
+    image: caddy:2-alpine
+    ports:
+      # WHY only 80 and 443: the only ports exposed to the host/internet
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - frontend
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    # WHY cap_add NET_BIND_SERVICE: Caddy needs to bind ports 80/443
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+
+# ---------------------------------------------------------------------------
+# Networks
+# WHY two networks: defense in depth — the proxy cannot reach the DB,
+# and the DB cannot reach the internet.
+# ---------------------------------------------------------------------------
+networks:
+  backend:
+    internal: true   # No external access; only db, migrate, app
+  frontend:          # proxy + app; proxy publishes ports
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  pgdata:            # Persistent Postgres data
+  caddy_data:        # Caddy TLS certificates
+  caddy_config:      # Caddy configuration state
+
+# ---------------------------------------------------------------------------
+# Secrets – read from local files (gitignored)
+# WHY file-based secrets: more secure than env vars; not visible in
+# docker inspect or /proc.  See ADR-003.
+# ---------------------------------------------------------------------------
+secrets:
+  db_password:
+    file: ../secrets/db_password.txt
+  jwt_secret:
+    file: ../secrets/jwt_secret.txt
+  seed_password:
+    file: ../secrets/seed_password.txt
