@@ -28,7 +28,11 @@ export APP_IMAGE="ghcr.io/sanyambedi/hospital-management-platform:$PREV_TAG"
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|$PREV_TAG" >> "$HISTORY_FILE"
 
 $COMPOSE up -d 2>/dev/null || true
-sleep 5
+for i in $(seq 1 30); do
+    STATUS=$(curl -ks https://localhost/healthz | jq -r .status 2>/dev/null || true)
+    if [ "$STATUS" = "ok" ]; then break; fi
+    sleep 1
+done
 
 # Verify with smoke test
 if bash scripts/smoke_test.sh; then

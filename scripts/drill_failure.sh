@@ -71,7 +71,14 @@ echo "--- Step 3: Restart database ---"
 $COMPOSE start db
 echo "DB started at $(date -u +%H:%M:%S)"
 echo "Waiting for DB to become healthy..."
-sleep 10
+for i in $(seq 1 30); do
+    code=$($COMPOSE exec -T db pg_isready -U hospital -d hospital 2>/dev/null && echo "ok" || echo "not_ok")
+    if [ "$code" = "ok" ]; then
+        break
+    fi
+    sleep 1
+done
+sleep 2
 
 echo "After DB recovery:"
 check_status "readyz (should recover to 200)" "$BASE_URL/readyz" "200"
@@ -96,7 +103,15 @@ if [ -n "$APP_CONTAINER" ]; then
     echo "App killed at $(date -u +%H:%M:%S)"
 
     echo "Waiting for Docker restart policy to bring it back..."
-    sleep 15
+    for i in $(seq 1 45); do
+        code_h=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "$BASE_URL/healthz" 2>/dev/null || echo "000")
+        code_r=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "$BASE_URL/readyz" 2>/dev/null || echo "000")
+        if [ "$code_h" = "200" ] && [ "$code_r" = "200" ]; then
+            echo "  ✓ App restarted and healthy after ${i}s"
+            break
+        fi
+        sleep 1
+    done
 
     echo "After app restart:"
     check_status "healthz (should recover)" "$BASE_URL/healthz" "200"

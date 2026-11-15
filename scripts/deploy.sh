@@ -37,7 +37,11 @@ $COMPOSE up -d 2>/dev/null || true
 
 # Wait for services to be healthy
 echo "Waiting for services to become healthy..."
-sleep 10
+for i in $(seq 1 30); do
+    STATUS=$(curl -ks https://localhost/healthz | jq -r .status 2>/dev/null || true)
+    if [ "$STATUS" = "ok" ]; then break; fi
+    sleep 1
+done
 
 # Run smoke test
 echo "Running smoke test..."
@@ -50,8 +54,13 @@ else
     if [ -n "$CURRENT_TAG" ]; then
         echo "Auto-rolling back to $CURRENT_TAG..."
         export IMAGE_TAG="$CURRENT_TAG"
-        $COMPOSE up -d --wait 2>/dev/null || true
-        sleep 5
+        export APP_IMAGE="ghcr.io/sanyambedi/hospital-management-platform:$CURRENT_TAG"
+        $COMPOSE up -d 2>/dev/null || true
+        for i in $(seq 1 30); do
+            STATUS=$(curl -ks https://localhost/healthz | jq -r .status 2>/dev/null || true)
+            if [ "$STATUS" = "ok" ]; then break; fi
+            sleep 1
+        done
         if bash scripts/smoke_test.sh; then
             echo "✓ Rollback to $CURRENT_TAG successful"
         else
