@@ -16,6 +16,8 @@ Covers:
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from tests.conftest import _auth_header, _login, _next_weekday_slot, _next_weekday_slot_offset
 
 
@@ -155,7 +157,17 @@ def test_reschedule_ok(client, seed_data):
         headers=_auth_header(token),
     )
     assert reschedule_resp.status_code == 200
-    assert reschedule_resp.json()["slot_start"].startswith(slot2[:16])
+    from zoneinfo import ZoneInfo
+
+    resched_raw = reschedule_resp.json()["slot_start"]
+    if resched_raw.endswith("Z"):
+        resched_slot = datetime.fromisoformat(resched_raw.replace("Z", "+00:00"))
+    else:
+        resched_slot = datetime.fromisoformat(resched_raw)
+        if resched_slot.tzinfo is None:
+            resched_slot = resched_slot.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+    expected_slot = datetime.fromisoformat(slot2)
+    assert resched_slot == expected_slot
 
 
 def test_reschedule_into_occupied_slot_409(client, seed_data):

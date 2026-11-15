@@ -32,7 +32,7 @@ ARG GIT_SHA=unknown
 LABEL org.opencontainers.image.title="Hospital Appointment API" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${GIT_SHA}" \
-      org.opencontainers.image.source="https://github.com/OWNER/hospital-appointment-api" \
+      org.opencontainers.image.source="https://github.com/sanyambedi/Hospital-Management-Platform" \
       org.opencontainers.image.description="Small hospital appointment service with production-grade delivery"
 
 # WHY these env vars:

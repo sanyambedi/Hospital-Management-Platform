@@ -25,7 +25,7 @@ Client → Caddy (HTTPS/TLS) → FastAPI → PostgreSQL
 
 ```bash
 # 1. Clone
-git clone <repo-url> && cd hospital-appointment-api
+git clone https://github.com/sanyambedi/Hospital-Management-Platform.git && cd Hospital-Management-Platform
 
 # 2. Generate secrets (idempotent)
 make init-secrets
