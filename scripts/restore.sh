@@ -38,6 +38,16 @@ fi
 echo "=== Database Restore ==="
 echo "File: $DUMP_FILE"
 
+# WHY: reuse the image the app is currently running, so restore never rebuilds/pulls a different one
+if [ -z "${APP_IMAGE:-}" ]; then
+    APP_CID=$($COMPOSE ps -aq app 2>/dev/null | head -1 || true)
+    if [ -n "$APP_CID" ]; then
+        APP_IMAGE=$(docker inspect -f '{{.Config.Image}}' "$APP_CID")
+        export APP_IMAGE
+        echo "Using deployed image: $APP_IMAGE"
+    fi
+fi
+
 # Stop app (keep db up for restore)
 echo "Stopping app..."
 $COMPOSE stop app 2>/dev/null || true

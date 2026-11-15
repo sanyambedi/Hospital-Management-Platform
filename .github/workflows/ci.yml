@@ -308,8 +308,8 @@ jobs:
           docker compose -f deploy/docker-compose.yml exec -T app id >> docs/evidence/deployment-health.txt
           echo "" >> docs/evidence/deployment-health.txt
           echo "=== Security: Published Ports (Only Caddy 80/443 on host) ===" >> docs/evidence/deployment-health.txt
-          docker compose -f deploy/docker-compose.yml port app 8000 2>&1 || echo "App port 8000 is internal-only (not published)" >> docs/evidence/deployment-health.txt
-          docker compose -f deploy/docker-compose.yml port db 5432 2>&1 || echo "DB port 5432 is internal-only (not published)" >> docs/evidence/deployment-health.txt
+          docker compose -f deploy/docker-compose.yml ps --format 'table {{.Service}}\t{{.Ports}}' >> docs/evidence/deployment-health.txt
+          echo "(app and db expose ports only on the internal Docker network; only the proxy publishes 80/443)" >> docs/evidence/deployment-health.txt
 
       - name: Run concurrency proof
         run: |
@@ -326,9 +326,20 @@ jobs:
 
       - name: Run rollback demo
         run: |
+          export SEED_PASSWORD=$(cat secrets/seed_password.txt)
           echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|sha-${{ github.sha }}" > .deployed_tags
-          bash scripts/deploy.sh broken-invalid-tag-demo || true
-          bash scripts/rollback.sh 2>&1 | tee docs/evidence/rollback.log
+          {
+            echo "=== ROLLBACK DEMO $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+            echo "Known-good release: sha-${{ github.sha }}"
+            echo "--- Deploying a BAD release (app starts but DB config is wrong, so /readyz must fail) ---"
+            DATABASE_URL_OVERRIDE=postgresql+psycopg://hospital@nonexistent-db:5432/hospital \
+              bash scripts/deploy.sh "sha-${{ github.sha }}" 2>&1
+            echo "--- Deployment history ---"
+            cat .deployed_tags
+            echo "--- Final state ---"
+            docker compose -f deploy/docker-compose.yml ps
+            echo "readyz: $(curl -ks https://localhost/readyz)"
+          } 2>&1 | tee docs/evidence/rollback.log
 
       - name: Upload evidence artifacts
         if: always()

@@ -33,7 +33,9 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|$NEW_TAG" >> "$HISTORY_FILE"
 # Deploy with new tag
 export IMAGE_TAG="$NEW_TAG"
 export APP_IMAGE="ghcr.io/sanyambedi/hospital-management-platform:$NEW_TAG"
-$COMPOSE up -d 2>/dev/null || true
+UP_OK=true
+$COMPOSE up -d || UP_OK=false
+[ "$UP_OK" = true ] || echo "✗ docker compose up failed for $NEW_TAG"
 
 # Wait for services to be healthy
 echo "Waiting for services to become healthy..."
@@ -45,17 +47,19 @@ done
 
 # Run smoke test
 echo "Running smoke test..."
-if bash scripts/smoke_test.sh; then
+if [ "$UP_OK" = true ] && bash scripts/smoke_test.sh; then
     echo "✓ Deploy successful: $NEW_TAG"
     # Print running image info
     $COMPOSE ps
 else
-    echo "✗ Smoke test FAILED for $NEW_TAG"
+    echo "✗ Deploy FAILED health/smoke checks for $NEW_TAG: detected"
     if [ -n "$CURRENT_TAG" ]; then
         echo "Auto-rolling back to $CURRENT_TAG..."
         export IMAGE_TAG="$CURRENT_TAG"
         export APP_IMAGE="ghcr.io/sanyambedi/hospital-management-platform:$CURRENT_TAG"
-        $COMPOSE up -d 2>/dev/null || true
+        unset DATABASE_URL_OVERRIDE  # rollback = last known-good image AND config
+        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|$CURRENT_TAG" >> "$HISTORY_FILE"
+        $COMPOSE up -d
         for i in $(seq 1 30); do
             STATUS=$(curl -ks https://localhost/healthz | jq -r .status 2>/dev/null || true)
             if [ "$STATUS" = "ok" ]; then break; fi

@@ -99,35 +99,40 @@ echo ""
 echo "--- Step 4: Kill app container ---"
 APP_CONTAINER=$($COMPOSE ps -q app 2>/dev/null)
 if [ -n "$APP_CONTAINER" ]; then
-    # Attempt to kill PID 1 inside container or send signal to trigger restart policy
-    docker exec "$APP_CONTAINER" kill -9 1 2>/dev/null || docker kill "$APP_CONTAINER" 2>/dev/null || true
-    echo "App killed at $(date -u +%H:%M:%S)"
+    # WHY kill from the HOST: the slim image has no `kill` binary, and `docker kill`/`docker stop`
+    # are treated by Docker as an intentional stop (restart policy would not fire). SIGKILL on
+    # the container's main process simulates a real crash, so the restart policy must recover it.
+    APP_PID=$(docker inspect -f '{{.State.Pid}}' "$APP_CONTAINER")
+    RESTARTS_BEFORE=$(docker inspect -f '{{.RestartCount}}' "$APP_CONTAINER")
+    echo "App container main PID (host): $APP_PID | restart count before: $RESTARTS_BEFORE"
+    if sudo -n kill -9 "$APP_PID" 2>/dev/null || kill -9 "$APP_PID" 2>/dev/null; then
+        echo "App process SIGKILLed at $(date -u +%H:%M:%S)"
+    else
+        echo "  ✗ Could not kill app process"
+        FAIL=$((FAIL + 1))
+    fi
 
-    echo "Waiting for Docker restart policy to bring it back..."
-    for i in $(seq 1 20); do
+    echo "Waiting for Docker restart policy (unless-stopped) to bring it back. No manual restart..."
+    RECOVERED=false
+    for i in $(seq 1 60); do
         code_h=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "$BASE_URL/healthz" 2>/dev/null || echo "000")
         code_r=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "$BASE_URL/readyz" 2>/dev/null || echo "000")
         if [ "$code_h" = "200" ] && [ "$code_r" = "200" ]; then
-            echo "  ✓ App restarted and healthy after ${i}s"
+            echo "  ✓ App restarted by Docker and healthy after ~${i}s"
+            RECOVERED=true
             break
         fi
         sleep 1
     done
 
-    # Fallback restart if Docker treated CLI kill as intentional manual stop
-    code_h=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "$BASE_URL/healthz" 2>/dev/null || echo "000")
-    if [ "$code_h" != "200" ]; then
-        echo "Restart policy manual-stop override detected, starting app via compose..."
-        $COMPOSE restart app >/dev/null 2>&1 || $COMPOSE up -d app >/dev/null 2>&1 || true
-        for i in $(seq 1 30); do
-            code_h=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "$BASE_URL/healthz" 2>/dev/null || echo "000")
-            code_r=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "$BASE_URL/readyz" 2>/dev/null || echo "000")
-            if [ "$code_h" = "200" ] && [ "$code_r" = "200" ]; then
-                echo "  ✓ App recovered after restart"
-                break
-            fi
-            sleep 1
-        done
+    RESTARTS_AFTER=$(docker inspect -f '{{.RestartCount}}' "$APP_CONTAINER" 2>/dev/null || echo "?")
+    echo "Restart count after: $RESTARTS_AFTER (before: $RESTARTS_BEFORE)"
+    if [ "$RECOVERED" = true ] && [ "$RESTARTS_AFTER" != "$RESTARTS_BEFORE" ]; then
+        echo "  ✓ Docker restart policy recovered the app automatically"
+        PASS=$((PASS + 1))
+    else
+        echo "  ✗ App was NOT recovered by the restart policy"
+        FAIL=$((FAIL + 1))
     fi
 
     echo "After app restart:"

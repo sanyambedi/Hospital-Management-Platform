@@ -92,7 +92,8 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      DATABASE_URL: postgresql+psycopg://hospital@db:5432/hospital
+      # WHY override: lets the rollback drill simulate a bad release (app starts, /readyz fails)
+      DATABASE_URL: ${DATABASE_URL_OVERRIDE:-postgresql+psycopg://hospital@db:5432/hospital}
       DB_PASSWORD_FILE: /run/secrets/db_password
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       SEED_PASSWORD_FILE: /run/secrets/seed_password
