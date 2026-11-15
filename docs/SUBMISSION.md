@@ -25,27 +25,20 @@
 
 ## Known Incomplete Features / Assumptions
 
-- No rate limiting (spec says "NOT required")
-- No frontend (API-only, as specified)
-- No /metrics endpoint (stretch goal, skipped for time)
-- Single-node deployment (Compose, not Kubernetes — appropriate for scope)
-- HTTPS uses internal CA, not production certificates
+- Trivy and pip-audit run in CI as non-blocking checks (accepted for time; reports are uploaded as artifacts)
+- SQLite fallback and the static UI (app/static/index.html) are local-dev extras outside the brief's scope
+- The app-kill part of the failure drill needs a Linux host (it kills the container's process by host PID), so it runs in CI, not on Docker Desktop
 
 ## Deployment & Evidence
 
-- **CI/CD Run URL**: https://github.com/sanyambedi/Hospital-Management-Platform/actions/runs/43713905755
-- **Image Digest**: `sha256:5cc0f68c9351339279781333f63f0cd4243df83dd08fc2cd6edffc5d68af4625`
-- **Image Tag**: `ghcr.io/sanyambedi/hospital-management-platform:latest` / `ghcr.io/sanyambedi/hospital-management-platform:v1.0.0`
-- **Evidence Files**:
-  - Concurrency Proof: [docs/evidence/concurrency-proof.log](evidence/concurrency-proof.log)
-  - Backup & Restore Drill: [docs/evidence/backup-restore.log](evidence/backup-restore.log)
-  - Failure & Recovery Drill: [docs/evidence/failure-drill.log](evidence/failure-drill.log)
-  - Rollback Demo: [docs/evidence/rollback.log](evidence/rollback.log)
-  - Deployment Health: [docs/evidence/deployment-health.txt](evidence/deployment-health.txt)
+- **CI/CD Run URL**: https://github.com/sanyambedi/Hospital-Management-Platform/actions/runs/43723667369
+- **Image Digest**: `sha256:51db07df4c457febc4e75fedb516d7e46d9b5ea53ca71c2827c123704ad1d478`
+- **Image Tag**: `ghcr.io/sanyambedi/hospital-management-platform:sha-eda8844419003e48bca47998324404c1c4f39f29`
+- **Demo mode**: Local-only demo (Docker Compose); no live public URL.
 
 ## AI & Attribution
 
-<<FILL: AI tools used and purpose>>
+AI tools used: Antigravity (code scaffolding, scripts, CI workflow) and Claude (spec planning, code review, debugging). I reviewed, ran and tested all generated code, and I can explain the architecture and modify it.
 
 ## Declarations Checklist
 
