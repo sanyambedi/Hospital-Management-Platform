@@ -26,6 +26,7 @@ notes/
 
 # Logs and temporary local run output
 *.log
+!docs/evidence/*.log
 *.out
 *.err
 hospital_test.db*

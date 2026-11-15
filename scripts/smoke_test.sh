@@ -66,8 +66,13 @@ if [ -n "$SEED_PASSWORD" ]; then
         # List doctors
         check "list_doctors" "200" "GET" "$BASE_URL/doctors" "" "Authorization: Bearer $TOKEN"
 
-        # Create appointment (find a valid future weekday slot)
-        SLOT_START=$(python -c "
+        # Get a doctor ID
+        DOCTOR_ID=$(curl $CURL_OPTS "$BASE_URL/doctors" \
+            -H "Authorization: Bearer $TOKEN" 2>/dev/null \
+            | python -c "import sys,json; docs=json.load(sys.stdin); print(docs[0]['id'] if docs else '')" 2>/dev/null) || DOCTOR_ID=""
+
+        # Create appointment (query an available weekday slot dynamically)
+        DATE_CANDIDATE=$(python -c "
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 tz = ZoneInfo('Asia/Kolkata')
@@ -75,14 +80,28 @@ now = datetime.now(tz)
 candidate = now + timedelta(days=1)
 while candidate.weekday() >= 5:
     candidate += timedelta(days=1)
-slot = candidate.replace(hour=10, minute=0, second=0, microsecond=0)
-print(slot.isoformat())
+print(candidate.strftime('%Y-%m-%d'))
 " 2>/dev/null)
 
-        # Get a doctor ID
-        DOCTOR_ID=$(curl $CURL_OPTS "$BASE_URL/doctors" \
-            -H "Authorization: Bearer $TOKEN" 2>/dev/null \
-            | python -c "import sys,json; docs=json.load(sys.stdin); print(docs[0]['id'] if docs else '')" 2>/dev/null) || DOCTOR_ID=""
+        SLOT_START=""
+        if [ -n "$DOCTOR_ID" ] && [ -n "$DATE_CANDIDATE" ]; then
+            SLOT_START=$(curl $CURL_OPTS "$BASE_URL/doctors/$DOCTOR_ID/slots?date=$DATE_CANDIDATE" \
+                -H "Authorization: Bearer $TOKEN" 2>/dev/null \
+                | python -c "import sys,json; slots=json.load(sys.stdin); print(slots[0]['slot_start'] if slots else '')" 2>/dev/null) || SLOT_START=""
+        fi
+
+        if [ -z "$SLOT_START" ]; then
+            SLOT_START=$(python -c "
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+import random
+tz = ZoneInfo('Asia/Kolkata')
+candidate = datetime.now(tz) + timedelta(days=random.randint(5, 25))
+while candidate.weekday() >= 5:
+    candidate += timedelta(days=1)
+print(candidate.replace(hour=14, minute=0, second=0, microsecond=0).isoformat())
+" 2>/dev/null)
+        fi
 
         if [ -n "$DOCTOR_ID" ] && [ -n "$SLOT_START" ]; then
             # Create appointment
