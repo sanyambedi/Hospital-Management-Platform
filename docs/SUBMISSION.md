@@ -31,6 +31,18 @@
 - Single-node deployment (Compose, not Kubernetes — appropriate for scope)
 - HTTPS uses internal CA, not production certificates
 
+## Deployment & Evidence
+
+- **CI/CD Run URL**: <<CI_RUN_URL>>
+- **Image Digest**: `<<IMAGE_DIGEST>>`
+- **Image Tag**: `ghcr.io/sanyambedi/hospital-management-platform:latest` / `ghcr.io/sanyambedi/hospital-management-platform:v1.0.0`
+- **Evidence Files**:
+  - Concurrency Proof: [docs/evidence/concurrency-proof.log](evidence/concurrency-proof.log)
+  - Backup & Restore Drill: [docs/evidence/backup-restore.log](evidence/backup-restore.log)
+  - Failure & Recovery Drill: [docs/evidence/failure-drill.log](evidence/failure-drill.log)
+  - Rollback Demo: [docs/evidence/rollback.log](evidence/rollback.log)
+  - Deployment Health: [docs/evidence/deployment-health.txt](evidence/deployment-health.txt)
+
 ## AI & Attribution
 
 <<FILL: AI tools used and purpose>>

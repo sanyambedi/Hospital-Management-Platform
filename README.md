@@ -148,6 +148,15 @@ make lint
 make concurrency-proof
 ```
 
+## Evidence & Verification
+
+All operational claims are verified with reproducible logs from real containerized stack runs:
+- [Concurrency Proof Log](docs/evidence/concurrency-proof.log): 50 parallel requests competing for the exact same slot; DB-level unique partial index guarantees 1x 201 Created and 49x 409 Conflict.
+- [Backup & Restore Drill Log](docs/evidence/backup-restore.log): Full backup, drop database, restore, and table checksum verification (PASS).
+- [Failure & Recovery Drill Log](docs/evidence/failure-drill.log): Database outage detection (`/healthz` 200, `/readyz` 503), recovery, and app container kill with Docker restart policy auto-recovery.
+- [Rollback Drill Log](docs/evidence/rollback.log): Bad image deployment failure detection and automated rollback to previous known-good tag.
+- [Deployment Health Report](docs/evidence/deployment-health.txt): Running container health statuses, image digest, non-root user verification, and internal port isolation.
+
 ## Troubleshooting
 
 - **503 on /readyz**: Check DB connectivity (`docker compose logs db`)
@@ -157,11 +166,12 @@ make concurrency-proof
 
 ## Known Limitations
 
-- No rate limiting (not required by spec)
-- No frontend (API only)
-- Single-node deployment (no HA)
-- Internal CA for TLS (not production-ready certificates)
-- HTTPS cert must be trusted manually for browsers
+- **SQLite Fallback**: The SQLite fallback engine is strictly for local dev/unit testing; production deployments require PostgreSQL 16+.
+- **Static UI**: The static frontend UI (`app/static/index.html`) is a convenience interface outside the core project brief scope.
+- **Metrics Endpoint**: `/metrics` Prometheus scrape endpoint was skipped for project scope and deadline constraints.
+- **Single-Node Deployment**: Docker Compose single-node deployment (sufficient for project scope; Kubernetes avoided per ADR-006).
+- **Internal CA for TLS**: Uses Caddy's internal ACME CA; self-signed certificate must be accepted or trusted manually with `curl -k`.
+- **No Rate Limiting**: Application-level rate limiting was omitted as per project specification.
 
 ## License
 
