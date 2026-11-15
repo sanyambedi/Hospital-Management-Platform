@@ -33,8 +33,8 @@
 
 ## Deployment & Evidence
 
-- **CI/CD Run URL**: <<CI_RUN_URL>>
-- **Image Digest**: `<<IMAGE_DIGEST>>`
+- **CI/CD Run URL**: https://github.com/sanyambedi/Hospital-Management-Platform/actions/runs/43713905755
+- **Image Digest**: `sha256:5cc0f68c9351339279781333f63f0cd4243df83dd08fc2cd6edffc5d68af4625`
 - **Image Tag**: `ghcr.io/sanyambedi/hospital-management-platform:latest` / `ghcr.io/sanyambedi/hospital-management-platform:v1.0.0`
 - **Evidence Files**:
   - Concurrency Proof: [docs/evidence/concurrency-proof.log](evidence/concurrency-proof.log)

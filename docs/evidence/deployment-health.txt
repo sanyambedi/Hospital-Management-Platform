@@ -1,0 +1,17 @@
+=== Docker Compose PS ===
+NAME             IMAGE                                                                                          COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed   "uvicorn app.main:ap…"   app       18 seconds ago   Up 10 seconds (healthy)   8000/tcp
+deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        18 seconds ago   Up 17 seconds (healthy)   5432/tcp
+deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     18 seconds ago   Up 4 seconds              0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
+
+=== Image Digest ===
+sha256:5cc0f68c9351339279781333f63f0cd4243df83dd08fc2cd6edffc5d68af4625
+
+=== HTTPS Probes ===
+/healthz: {"status":"ok"}
+/readyz: {"status":"ready","checks":{"db":"ok","migrations":"ok"}}
+
+=== Security: Container Non-Root User ===
+uid=10001(appuser) gid=10001(appuser) groups=10001(appuser)
+
+=== Security: Published Ports (Only Caddy 80/443 on host) ===

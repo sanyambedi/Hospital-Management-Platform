@@ -1,0 +1,21 @@
+=== Rollback ===
+Current: broken-invalid-tag-demo
+Rolling back to: sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed
+=== Smoke Test ===
+
+  ✓ healthz (HTTP 200)
+  ✓ readyz (HTTP 200)
+  ✓ login (got token)
+  ✓ list_doctors (HTTP 200)
+  ✓ create_appointment (HTTP 201)
+  ✓ double_booking_409 (HTTP 409)
+
+=== Results: 6 passed, 0 failed ===
+✓ Rollback to sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed successful
+
+Running image:
+NAME             IMAGE                                                                                          COMMAND                  SERVICE   CREATED              STATUS                        PORTS
+deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed   "uvicorn app.main:ap…"   app       8 seconds ago        Up 6 seconds (healthy)        8000/tcp
+deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        About a minute ago   Up About a minute (healthy)   5432/tcp
+deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     About a minute ago   Up About a minute             0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
+=== Rollback complete ===
