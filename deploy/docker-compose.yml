@@ -56,7 +56,7 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    image: ${APP_IMAGE:-ghcr.io/sanyambedi/hospital-management-platform:${IMAGE_TAG:-latest}}
+    image: ${APP_IMAGE:-hospital-appointment-api:local}
     command: >
       sh -c "alembic upgrade head"
     depends_on:
@@ -83,7 +83,7 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    image: ${APP_IMAGE:-ghcr.io/sanyambedi/hospital-management-platform:${IMAGE_TAG:-latest}}
+    image: ${APP_IMAGE:-hospital-appointment-api:local}
     restart: unless-stopped
     depends_on:
       db:
