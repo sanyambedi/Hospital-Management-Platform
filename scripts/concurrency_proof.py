@@ -126,18 +126,18 @@ def main():
 
     # Check DB (via API - list appointments and count)
     status, appts = api_request("GET", "/appointments", headers=auth_headers)
-    # Count confirmed appointments for this doctor+slot
-    confirmed = (
-        [
-            a
-            for a in appts
-            if a.get("doctor_id") == doctor_id
-            and a.get("slot_start", "").startswith(slot_start[:16])
-            and a.get("status") == "confirmed"
-        ]
-        if isinstance(appts, list)
-        else []
-    )
+    target_dt = datetime.fromisoformat(slot_start)
+
+    def match_slot(a):
+        if a.get("doctor_id") != doctor_id or a.get("status") != "confirmed":
+            return False
+        raw = a.get("slot_start", "")
+        if not raw:
+            return False
+        raw_dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        return raw_dt == target_dt
+
+    confirmed = [a for a in appts if match_slot(a)] if isinstance(appts, list) else []
 
     print(f"Confirmed DB rows for this slot: {len(confirmed)}")
     print()

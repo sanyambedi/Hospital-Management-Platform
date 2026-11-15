@@ -290,6 +290,53 @@ jobs:
           export SEED_PASSWORD=$(cat secrets/seed_password.txt)
           bash scripts/smoke_test.sh
 
+      # --- Step 3 Real Evidence Generation ---
+      - name: Generate deployment health evidence
+        run: |
+          mkdir -p docs/evidence
+          echo "=== Docker Compose PS ===" > docs/evidence/deployment-health.txt
+          docker compose -f deploy/docker-compose.yml ps >> docs/evidence/deployment-health.txt
+          echo "" >> docs/evidence/deployment-health.txt
+          echo "=== Image Digest ===" >> docs/evidence/deployment-health.txt
+          echo "${{ needs.build-scan-push.outputs.digest }}" >> docs/evidence/deployment-health.txt
+          echo "" >> docs/evidence/deployment-health.txt
+          echo "=== HTTPS Probes ===" >> docs/evidence/deployment-health.txt
+          echo "/healthz: $(curl -ks https://localhost/healthz)" >> docs/evidence/deployment-health.txt
+          echo "/readyz: $(curl -ks https://localhost/readyz)" >> docs/evidence/deployment-health.txt
+          echo "" >> docs/evidence/deployment-health.txt
+          echo "=== Security: Container Non-Root User ===" >> docs/evidence/deployment-health.txt
+          docker compose -f deploy/docker-compose.yml exec -T app id >> docs/evidence/deployment-health.txt
+          echo "" >> docs/evidence/deployment-health.txt
+          echo "=== Security: Published Ports (Only Caddy 80/443 on host) ===" >> docs/evidence/deployment-health.txt
+          docker compose -f deploy/docker-compose.yml port app 8000 2>&1 || echo "App port 8000 is internal-only (not published)" >> docs/evidence/deployment-health.txt
+          docker compose -f deploy/docker-compose.yml port db 5432 2>&1 || echo "DB port 5432 is internal-only (not published)" >> docs/evidence/deployment-health.txt
+
+      - name: Run concurrency proof
+        run: |
+          export SEED_PASSWORD=$(cat secrets/seed_password.txt)
+          python3 scripts/concurrency_proof.py
+
+      - name: Run backup restore drill
+        run: |
+          bash scripts/drill_backup_restore.sh
+
+      - name: Run failure recovery drill
+        run: |
+          bash scripts/drill_failure.sh
+
+      - name: Run rollback demo
+        run: |
+          echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|sha-${{ github.sha }}" > .deployed_tags
+          bash scripts/deploy.sh broken-invalid-tag-demo || true
+          bash scripts/rollback.sh 2>&1 | tee docs/evidence/rollback.log
+
+      - name: Upload evidence artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drill-evidence-logs
+          path: docs/evidence/
+
       - name: Dump logs on failure
         if: failure()
         run: docker compose -f deploy/docker-compose.yml logs

@@ -32,7 +32,8 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|$NEW_TAG" >> "$HISTORY_FILE"
 
 # Deploy with new tag
 export IMAGE_TAG="$NEW_TAG"
-$COMPOSE up -d --wait 2>/dev/null || true
+export APP_IMAGE="ghcr.io/sanyambedi/hospital-management-platform:$NEW_TAG"
+$COMPOSE up -d 2>/dev/null || true
 
 # Wait for services to be healthy
 echo "Waiting for services to become healthy..."

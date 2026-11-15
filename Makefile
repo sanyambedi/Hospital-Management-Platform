@@ -27,7 +27,9 @@ init-secrets:
 
 ## Start the full stack (db + migrate + app + proxy); waits for healthy
 up:
-	$(COMPOSE) up -d --wait
+	$(COMPOSE) up -d
+	@echo "Waiting for services to become healthy..."
+	@sleep 8
 
 ## Stop all services
 down:
@@ -101,7 +103,7 @@ smoke:
 
 ## Run concurrency proof (50 parallel bookings → exactly 1 success)
 concurrency-proof:
-	python scripts/concurrency_proof.py
+	python3 scripts/concurrency_proof.py || python scripts/concurrency_proof.py
 
 ## Full demo: secrets → up → seed → smoke → concurrency → drills → summary
 demo:

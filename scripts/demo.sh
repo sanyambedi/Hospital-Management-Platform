@@ -70,7 +70,7 @@ run_step "Seed Data" $COMPOSE exec -T app python -m app.seed
 run_step "Smoke Test" bash scripts/smoke_test.sh
 
 # Step 5: Concurrency proof
-run_step "Concurrency Proof" python scripts/concurrency_proof.py
+run_step "Concurrency Proof" python3 scripts/concurrency_proof.py
 
 # Step 6: Backup/restore drill
 run_step "Backup/Restore Drill" bash scripts/drill_backup_restore.sh

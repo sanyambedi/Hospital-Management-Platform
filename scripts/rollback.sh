@@ -24,9 +24,10 @@ echo "Rolling back to: $PREV_TAG"
 
 # Deploy previous tag
 export IMAGE_TAG="$PREV_TAG"
+export APP_IMAGE="ghcr.io/sanyambedi/hospital-management-platform:$PREV_TAG"
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)|$PREV_TAG" >> "$HISTORY_FILE"
 
-$COMPOSE up -d --wait 2>/dev/null || true
+$COMPOSE up -d 2>/dev/null || true
 sleep 5
 
 # Verify with smoke test

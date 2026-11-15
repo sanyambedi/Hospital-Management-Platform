@@ -24,6 +24,14 @@ echo "  $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 echo "=============================================="
 echo ""
 
+# Step 0: Ensure baseline test appointments exist
+$COMPOSE exec -T db psql -U hospital -d hospital -c "
+INSERT INTO appointments (id, doctor_id, patient_id, slot_start, slot_end, status, reason, created_at, updated_at)
+SELECT gen_random_uuid(), d.id, p.id, (date_trunc('hour', NOW() + interval '2 days') + interval '10 hours'), (date_trunc('hour', NOW() + interval '2 days') + interval '10 hours 30 minutes'), 'confirmed', 'pre-drill baseline appointment', NOW(), NOW()
+FROM doctors d, patients p LIMIT 1
+ON CONFLICT DO NOTHING;
+" 2>/dev/null || true
+
 # Step 1: Capture baseline data
 echo "--- Step 1: Capture baseline ---"
 ROW_COUNT_BEFORE=$($COMPOSE exec -T db psql -U hospital -d hospital -t -c \
