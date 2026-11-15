@@ -182,7 +182,7 @@ jobs:
 
       # Trivy image scan
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
           format: sarif
@@ -202,7 +202,7 @@ jobs:
 
       # Trivy filesystem/config scan
       - name: Trivy config scan
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           scan-type: config
           scan-ref: .
