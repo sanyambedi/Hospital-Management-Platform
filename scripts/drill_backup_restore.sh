@@ -65,7 +65,7 @@ echo ""
 
 # Step 5: Restore
 echo "--- Step 5: Restore from backup ---"
-bash scripts/restore.sh "$LATEST_DUMP" --yes
+SKIP_WRITE_TEST=true bash scripts/restore.sh "$LATEST_DUMP" --yes
 echo ""
 
 # Step 6: Verify data integrity

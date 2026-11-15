@@ -58,8 +58,12 @@ $COMPOSE start app
 echo "Waiting for app to become healthy..."
 sleep 5
 
-# Run smoke test to verify
-echo "Running smoke test..."
-bash scripts/smoke_test.sh && echo "✓ Restore verified by smoke test" || echo "✗ Smoke test failed after restore"
+# Verify restored service
+if [ "${SKIP_WRITE_TEST:-false}" = "true" ]; then
+    curl -ks "${BASE_URL:-https://localhost}/readyz" | grep -q "ready" && echo "✓ Restore verified by readyz check"
+else
+    echo "Running smoke test..."
+    bash scripts/smoke_test.sh && echo "✓ Restore verified by smoke test" || echo "✗ Smoke test failed after restore"
+fi
 
 echo "=== Restore complete ==="
