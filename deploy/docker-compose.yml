@@ -84,7 +84,6 @@ services:
       context: ..
       dockerfile: Dockerfile
     image: ${APP_IMAGE:-hospital-appointment-api:local}
-    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
