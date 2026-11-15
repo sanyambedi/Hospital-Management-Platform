@@ -1,20 +1,20 @@
 ==============================================
   BACKUP/RESTORE DRILL
-  2026-11-15T12:30:26Z
+  2026-11-15T14:21:45Z
 ==============================================
 
 INSERT 0 1
 --- Step 1: Capture baseline ---
 Appointments before: 3
-Checksum before:     5cd270cc6768d01434fe86b501ecfc9a
+Checksum before:     fd7b0ea7d667cc0de256564addbb1942
 
 --- Step 2: Run backup ---
 === Database Backup ===
-Timestamp: 20261115_123026
-✓ Backup saved: backups/hospital_20261115_123026.dump (12K)
-✓ Checksum: backups/hospital_20261115_123026.dump.sha256
+Timestamp: 20261115_142146
+✓ Backup saved: backups/hospital_20261115_142146.dump (12K)
+✓ Checksum: backups/hospital_20261115_142146.dump.sha256
 === Backup complete ===
-Latest dump: backups/hospital_20261115_123026.dump
+Latest dump: backups/hospital_20261115_142146.dump
 
 --- Step 3: Destroy data (TRUNCATE appointments) ---
 TRUNCATE TABLE
@@ -25,84 +25,19 @@ Appointments after destroy: 0
 
 --- Step 5: Restore from backup ---
 Verifying checksum...
-backups/hospital_20261115_123026.dump: OK
+backups/hospital_20261115_142146.dump: OK
 ✓ Checksum verified
 === Database Restore ===
-File: backups/hospital_20261115_123026.dump
+File: backups/hospital_20261115_142146.dump
+Using deployed image: ghcr.io/sanyambedi/hospital-management-platform:sha-eda8844419003e48bca47998324404c1c4f39f29
 Stopping app...
 Restoring database...
 Running migrations...
  Container deploy-db-1 Running 
- Image hospital-appointment-api:local Pulling 
- Image hospital-appointment-api:local pull access denied for hospital-appointment-api, repository does not exist or may require 'docker login' 
- Image hospital-appointment-api:local Building 
-#1 [internal] load local bake definitions
-#1 reading from stdin 620B done
-#1 DONE 0.0s
-
-#2 [internal] load build definition from Dockerfile
-#2 transferring dockerfile: 2.77kB done
-#2 DONE 0.0s
-
-#3 [internal] load metadata for docker.io/library/python:3.12-slim
-#3 DONE 0.2s
-
-#4 [internal] load .dockerignore
-#4 transferring context: 415B done
-#4 DONE 0.0s
-
-#5 [builder 1/4] FROM docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
-#5 resolve docker.io/library/python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b done
-#5 DONE 0.0s
-
-#6 [internal] load build context
-#6 transferring context: 997B done
-#6 DONE 0.0s
-
-#7 [runtime 4/7] COPY app/ ./app/
-#7 CACHED
-
-#8 [runtime 2/7] WORKDIR /srv
-#8 CACHED
-
-#9 [runtime 3/7] COPY --from=builder /opt/venv /opt/venv
-#9 CACHED
-
-#10 [runtime 5/7] COPY migrations/ ./migrations/
-#10 CACHED
-
-#11 [builder 2/4] WORKDIR /build
-#11 CACHED
-
-#12 [builder 3/4] COPY requirements.txt .
-#12 CACHED
-
-#13 [builder 4/4] RUN python -m venv /opt/venv     && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
-#13 CACHED
-
-#14 [runtime 6/7] COPY alembic.ini .
-#14 CACHED
-
-#15 [runtime 7/7] RUN groupadd -r appuser -g 10001 &&     useradd -r -u 10001 -g appuser -s /usr/sbin/nologin appuser
-#15 CACHED
-
-#16 exporting to image
-#16 exporting layers done
-#16 exporting manifest sha256:d699f7c076fcfc43ba850c67b337b039a98ee445ebee1de1ed829c55962043d0 done
-#16 exporting config sha256:4eb0a03dcc7756ef96c24e4c96ef7363f7c334f6352ffadd03c2582dc1a59b48 done
-#16 exporting attestation manifest sha256:f158ba09c2dfa802b1e939625f8474355523ef00c366ac473a22fba6b90bc374 done
-#16 exporting manifest list sha256:484dc745cd1855f458b4cade956a0788a70250a853ecbf43f2853920be7a8e23 done
-#16 naming to docker.io/library/hospital-appointment-api:local done
-#16 unpacking to docker.io/library/hospital-appointment-api:local done
-#16 DONE 0.0s
-
-#17 resolving provenance for metadata file
-#17 DONE 0.0s
- Image hospital-appointment-api:local Built 
  Container deploy-db-1 Waiting 
  Container deploy-db-1 Healthy 
- Container deploy-migrate-run-2314a823cb86 Creating 
- Container deploy-migrate-run-2314a823cb86 Created 
+ Container deploy-migrate-run-0bb9e45a9525 Creating 
+ Container deploy-migrate-run-0bb9e45a9525 Created 
 INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
 INFO  [alembic.runtime.migration] Will assume transactional DDL.
 Starting app...
@@ -110,8 +45,8 @@ Starting app...
  Container deploy-db-1 Healthy 
  Container deploy-migrate-1 Starting 
  Container deploy-migrate-1 Started 
- Container deploy-db-1 Waiting 
  Container deploy-migrate-1 Waiting 
+ Container deploy-db-1 Waiting 
  Container deploy-db-1 Healthy 
  Container deploy-migrate-1 Exited 
  Container deploy-app-1 Starting 
@@ -122,14 +57,14 @@ Waiting for app to become healthy...
 
 --- Step 6: Verify data integrity ---
 Appointments after restore:  3
-Checksum after restore:      5cd270cc6768d01434fe86b501ecfc9a
+Checksum after restore:      fd7b0ea7d667cc0de256564addbb1942
 
 --- Result ---
 ✓ PASS: Row count and checksum match
-  Before:  count=3 checksum=5cd270cc6768d01434fe86b501ecfc9a
-  After:   count=3  checksum=5cd270cc6768d01434fe86b501ecfc9a
+  Before:  count=3 checksum=fd7b0ea7d667cc0de256564addbb1942
+  After:   count=3  checksum=fd7b0ea7d667cc0de256564addbb1942
 
 ==============================================
   DRILL RESULT: PASS
-  2026-11-15T12:30:36Z
+  2026-11-15T14:21:56Z
 ==============================================

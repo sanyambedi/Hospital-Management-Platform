@@ -1,11 +1,11 @@
 === Docker Compose PS ===
 NAME             IMAGE                                                                                          COMMAND                  SERVICE   CREATED          STATUS                    PORTS
-deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed   "uvicorn app.main:ap…"   app       18 seconds ago   Up 10 seconds (healthy)   8000/tcp
-deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        18 seconds ago   Up 17 seconds (healthy)   5432/tcp
-deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     18 seconds ago   Up 4 seconds              0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
+deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-eda8844419003e48bca47998324404c1c4f39f29   "uvicorn app.main:ap…"   app       18 seconds ago   Up 10 seconds (healthy)   8000/tcp
+deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        19 seconds ago   Up 18 seconds (healthy)   5432/tcp
+deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     18 seconds ago   Up 5 seconds              0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
 
 === Image Digest ===
-sha256:5cc0f68c9351339279781333f63f0cd4243df83dd08fc2cd6edffc5d68af4625
+sha256:51db07df4c457febc4e75fedb516d7e46d9b5ea53ca71c2827c123704ad1d478
 
 === HTTPS Probes ===
 /healthz: {"status":"ok"}
@@ -15,3 +15,8 @@ sha256:5cc0f68c9351339279781333f63f0cd4243df83dd08fc2cd6edffc5d68af4625
 uid=10001(appuser) gid=10001(appuser) groups=10001(appuser)
 
 === Security: Published Ports (Only Caddy 80/443 on host) ===
+SERVICE   PORTS
+app       8000/tcp
+db        5432/tcp
+proxy     0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
+(app and db expose ports only on the internal Docker network; only the proxy publishes 80/443)

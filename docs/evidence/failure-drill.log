@@ -1,14 +1,14 @@
 ==============================================
   FAILURE/RECOVERY DRILL
-  2026-11-15T12:30:36Z
+  2026-11-15T14:21:56Z
 ==============================================
 
 --- Step 1: Baseline checks ---
 Services:
 NAME             IMAGE                                                                                          COMMAND                  SERVICE   CREATED          STATUS                            PORTS
-deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed   "uvicorn app.main:ap…"   app       29 seconds ago   Up 5 seconds (health: starting)   8000/tcp
-deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        29 seconds ago   Up 29 seconds (healthy)           5432/tcp
-deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     29 seconds ago   Up 16 seconds                     0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
+deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-eda8844419003e48bca47998324404c1c4f39f29   "uvicorn app.main:ap…"   app       30 seconds ago   Up 5 seconds (health: starting)   8000/tcp
+deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        31 seconds ago   Up 30 seconds (healthy)           5432/tcp
+deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     30 seconds ago   Up 17 seconds                     0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
 
   ✓ healthz: HTTP 200 (expected 200)
   ✓ readyz: HTTP 200 (expected 200)
@@ -16,43 +16,43 @@ deploy-proxy-1   caddy:2-alpine                                                 
 --- Step 2: Kill database ---
  Container deploy-db-1 Stopping 
  Container deploy-db-1 Stopped 
-DB stopped at 12:30:36
+DB stopped at 14:21:56
 After DB kill:
   ✓ healthz (should still be 200): HTTP 200 (expected 200)
   ✓ readyz (should be 503): HTTP 503 (expected 503)
 
 App logs showing DB error:
-app-1  | INFO:     127.0.0.1:53900 - "GET /healthz HTTP/1.1" 200 OK
-app-1  | {"method": "GET", "path": "/healthz", "status": 200, "duration_ms": 0.31, "event": "request_completed", "request_id": "cbb41afe-ae1d-430a-835b-394590757b43", "level": "info", "ts": "2026-11-15T12:30:39.963901Z"}
-app-1  | INFO:     172.18.0.3:42512 - "GET /healthz HTTP/1.1" 200 OK
-app-1  | {"method": "GET", "path": "/readyz", "status": 503, "duration_ms": 3.07, "event": "request_completed", "request_id": "af9d2f4e-db3f-4259-814a-4a5870722d46", "level": "info", "ts": "2026-11-15T12:30:39.975804Z"}
-app-1  | INFO:     172.18.0.3:42512 - "GET /readyz HTTP/1.1" 503 Service Unavailable
+app-1  | INFO:     127.0.0.1:41260 - "GET /healthz HTTP/1.1" 200 OK
+app-1  | {"method": "GET", "path": "/healthz", "status": 200, "duration_ms": 0.32, "event": "request_completed", "request_id": "1e106724-ba64-4803-86d3-a2a8a15ccc87", "level": "info", "ts": "2026-11-15T14:21:59.673013Z"}
+app-1  | INFO:     172.19.0.3:49442 - "GET /healthz HTTP/1.1" 200 OK
+app-1  | {"method": "GET", "path": "/readyz", "status": 503, "duration_ms": 7.94, "event": "request_completed", "request_id": "199be2c6-19c2-4999-9510-ac2b9b55423f", "level": "info", "ts": "2026-11-15T14:21:59.690619Z"}
+app-1  | INFO:     172.19.0.3:49442 - "GET /readyz HTTP/1.1" 503 Service Unavailable
 
 --- Step 3: Restart database ---
  Container deploy-db-1 Starting 
  Container deploy-db-1 Started 
-DB started at 12:30:40
+DB started at 14:21:59
 Waiting for DB to become healthy...
 After DB recovery:
   ✓ readyz (should recover to 200): HTTP 200 (expected 200)
   ✓ Data intact after DB restart (3 doctors)
 
 --- Step 4: Kill app container ---
-OCI runtime exec failed: exec failed: unable to start container process: exec: "kill": executable file not found in $PATH
-51a22aed69fcf2688a4f588479dce34c7a9229a24545eaec97c7f1f6a3d49ae0
-App killed at 12:31:14
-Waiting for Docker restart policy to bring it back...
-Restart policy manual-stop override detected, starting app via compose...
-  ✓ App recovered after restart
+App container main PID (host): 4395 | restart count before: 0
+App process SIGKILLed at 14:22:35
+Waiting for Docker restart policy (unless-stopped) to bring it back. No manual restart...
+  ✓ App restarted by Docker and healthy after ~4s
+Restart count after: 1 (before: 0)
+  ✓ Docker restart policy recovered the app automatically
 After app restart:
   ✓ healthz (should recover): HTTP 200 (expected 200)
   ✓ readyz (should recover): HTTP 200 (expected 200)
-  Recovery detected at 12:31:38
+  Recovery detected at 14:22:38
 
 ==============================================
   DRILL RESULTS
-  Passed: 8
+  Passed: 9
   Failed: 0
   OVERALL: PASS
-  2026-11-15T12:31:38Z
+  2026-11-15T14:22:38Z
 ==============================================

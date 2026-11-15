@@ -1,6 +1,53 @@
-=== Rollback ===
-Current: broken-invalid-tag-demo
-Rolling back to: sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed
+=== ROLLBACK DEMO 2026-11-15T14:22:38Z ===
+Known-good release: sha-eda8844419003e48bca47998324404c1c4f39f29
+--- Deploying a BAD release (app starts but DB config is wrong, so /readyz must fail) ---
+=== Deploying IMAGE_TAG=sha-eda8844419003e48bca47998324404c1c4f39f29 ===
+Previous tag: sha-eda8844419003e48bca47998324404c1c4f39f29
+ Container deploy-db-1 Running 
+ Container deploy-migrate-1 Recreate 
+ Container deploy-migrate-1 Recreated 
+ Container deploy-app-1 Recreate 
+ Container deploy-app-1 Recreated 
+ Container deploy-proxy-1 Running 
+ Container deploy-db-1 Waiting 
+ Container deploy-db-1 Healthy 
+ Container deploy-migrate-1 Starting 
+ Container deploy-migrate-1 Started 
+ Container deploy-db-1 Waiting 
+ Container deploy-migrate-1 Waiting 
+ Container deploy-db-1 Healthy 
+ Container deploy-migrate-1 Exited 
+ Container deploy-app-1 Starting 
+ Container deploy-app-1 Started 
+ Container deploy-app-1 Waiting 
+ Container deploy-app-1 Healthy 
+Waiting for services to become healthy...
+Running smoke test...
+=== Smoke Test ===
+
+  ✓ healthz (HTTP 200)
+  ✗ readyz (expected 200, got 503)
+  ✗ login (no token received)
+
+=== Results: 1 passed, 2 failed ===
+✗ Deploy FAILED health/smoke checks for sha-eda8844419003e48bca47998324404c1c4f39f29: detected
+Auto-rolling back to sha-eda8844419003e48bca47998324404c1c4f39f29...
+ Container deploy-db-1 Running 
+ Container deploy-app-1 Recreate 
+ Container deploy-app-1 Recreated 
+ Container deploy-proxy-1 Running 
+ Container deploy-db-1 Waiting 
+ Container deploy-db-1 Healthy 
+ Container deploy-migrate-1 Starting 
+ Container deploy-migrate-1 Started 
+ Container deploy-migrate-1 Waiting 
+ Container deploy-db-1 Waiting 
+ Container deploy-db-1 Healthy 
+ Container deploy-migrate-1 Exited 
+ Container deploy-app-1 Starting 
+ Container deploy-app-1 Started 
+ Container deploy-app-1 Waiting 
+ Container deploy-app-1 Healthy 
 === Smoke Test ===
 
   ✓ healthz (HTTP 200)
@@ -11,11 +58,15 @@ Rolling back to: sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed
   ✓ double_booking_409 (HTTP 409)
 
 === Results: 6 passed, 0 failed ===
-✓ Rollback to sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed successful
-
-Running image:
-NAME             IMAGE                                                                                          COMMAND                  SERVICE   CREATED              STATUS                        PORTS
-deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-74834ebc0f48b88a9f5ce21614bc3ec7f8af68ed   "uvicorn app.main:ap…"   app       8 seconds ago        Up 6 seconds (healthy)        8000/tcp
-deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        About a minute ago   Up About a minute (healthy)   5432/tcp
-deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     About a minute ago   Up About a minute             0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
-=== Rollback complete ===
+✓ Rollback to sha-eda8844419003e48bca47998324404c1c4f39f29 successful
+=== Deploy complete ===
+--- Deployment history ---
+2026-11-15T14:22:38Z|sha-eda8844419003e48bca47998324404c1c4f39f29
+2026-11-15T14:22:38Z|sha-eda8844419003e48bca47998324404c1c4f39f29
+2026-11-15T14:22:46Z|sha-eda8844419003e48bca47998324404c1c4f39f29
+--- Final state ---
+NAME             IMAGE                                                                                          COMMAND                  SERVICE   CREATED              STATUS                    PORTS
+deploy-app-1     ghcr.io/sanyambedi/hospital-management-platform:sha-eda8844419003e48bca47998324404c1c4f39f29   "uvicorn app.main:ap…"   app       9 seconds ago        Up 6 seconds (healthy)    8000/tcp
+deploy-db-1      postgres:16-alpine                                                                             "docker-entrypoint.s…"   db        About a minute ago   Up 55 seconds (healthy)   5432/tcp
+deploy-proxy-1   caddy:2-alpine                                                                                 "caddy run --config …"   proxy     About a minute ago   Up About a minute         0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp
+readyz: {"status":"ready","checks":{"db":"ok","migrations":"ok"}}
